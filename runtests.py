@@ -6,16 +6,20 @@ import subprocess
 import sys
 
 import os
+from os.path import expanduser
 import re
 from prettytable import PrettyTable
 from tqdm import tqdm
 
-runCommand = "{path_to_command}/datagenerator -c {config_file} -u {user_name} -p {pass_word} -cs {connect_string} -bs {batch_size} -commit {commit_size} -scale {scale} -db -cl -nodrop -noddl -tc {threads} -trunc -async"
+runCommand = "{path_to_command} -c {config_file} -u {user_name} -p {pass_word} -cs {connect_string} -bs {batch_size} -commit {commit_size} -scale {scale} -db -cl -nodrop -noddl -tc {threads} -trunc -async"
 DEFAULT_BATCH_SIZE=100
 DEFAULT_COMMIT_SIZE=100
 DEFAULT_SCALE = 1
 DEFAUT_IMAGE_SIZE=2000
 DEFAULT_THREAD_COUNT=1
+DEFAULT_DATAGEN_LOCATION=expanduser("~") + "/datagenerator/bin/datagenerator"
+DEFAULT_REL_CONFIG = "anpr_relational.xml"
+DEFAULT_DOC_CONFIG = "anpr_document.xml"
 
 def print_results(results, *description):
     cols = description + ("Rows/Sec",)
@@ -35,7 +39,7 @@ def set_logging(level):
     logger.addHandler(ch)
 
 
-def run_tests(config, username, password, connect_string, commit_sizes, batch_sizes, threads, scale):
+def run_tests(path_to_executable, config, username, password, connect_string, commit_sizes, batch_sizes, threads, scale):
     results = []
     path = os.path.dirname(os.path.realpath(sys.argv[0]))
     logging.debug("\nconfig : {}\nusername : {}\npassword : {}\nconnect string : {}\ncommit_sizes : {}\nbatch_sizes : {}\npath : {}".format(config, username, password, connect_string, commit_sizes, batch_sizes, path))
@@ -44,8 +48,8 @@ def run_tests(config, username, password, connect_string, commit_sizes, batch_si
         with tqdm(desc="Tests Run", total=len(commit_sizes)*len(batch_sizes)) as pbar:
             for commit_size in commit_sizes:
                 for batch_size in batch_sizes:
-                    execute = runCommand.format(path_to_command=path,
-                                                config_file=config,
+                    execute = runCommand.format(path_to_command=path_to_executable,
+                                                config_file=path + "/" +config,
                                                 user_name=username,
                                                 pass_word=password,
                                                 connect_string=connect_string,
@@ -75,6 +79,7 @@ if __name__ == '__main__':
     parser.add_argument("-bat", "--batchsizes", help="list of batch sizes to run test with (comma seperated)")
     parser.add_argument("-tc", "--threads", help="number of threads to run test with (default=1)", default=DEFAULT_THREAD_COUNT)
     parser.add_argument("-scale", "-scale", help="scale/size of benchmark (default=1)", default=DEFAULT_SCALE)
+    parser.add_argument("-dgl", "--dglocation", help="path to the datagenerator executable", default=DEFAULT_DATAGEN_LOCATION)
     parser.add_argument("-debug", help="output debug to stdout", dest='debug_on', action='store_true')
 
     args = parser.parse_args()
@@ -88,6 +93,7 @@ if __name__ == '__main__':
     test_type = args.schematype
     thread_count=args.threads
     scale=args.scale
+    dg_location=args.dglocation
 
     commit_sizes = []
     if args.commitsizes != None:
@@ -97,15 +103,14 @@ if __name__ == '__main__':
     if args.batchsizes != None:
         batch_sizes = args.batchsizes.split(",")
 
-    relational_config = "anpr_relational.xml"
-    document_config = "anpr.xml"
+
     config = None
 
     if test_type == "relational":
-        config = relational_config
+        config = DEFAULT_REL_CONFIG
     else:
-        config = document_config
+        config = DEFAULT_DOC_CONFIG
 
     # run_batch_tests(config, username, password, connect_string, batch_sizes, threads=thread_count, scale=scale)
-    run_tests(config, username, password, connect_string, commit_sizes=commit_sizes, batch_sizes=batch_sizes, threads=thread_count, scale=scale)
+    run_tests(dg_location, config, username, password, connect_string, commit_sizes=commit_sizes, batch_sizes=batch_sizes, threads=thread_count, scale=scale)
     # run_commit_tests(config, username, password, connect_string, commit_sizes)
