@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<TableDataGenerator xmlns="http://www.domincgiles.com/datagen">
+    <DatabaseConnectionInformation>
+        <Username>anpr</Username>
+        <Password>anpr</Password>
+        <ConnectString>//﻿﻿ora122server/soe</ConnectString>
+        <DriverType>thin</DriverType>
+    </DatabaseConnectionInformation>
+    <Table RowCount="100000">
+        <TableName>ANPR_Collection</TableName>
+        <Columns>
+            <Column>
+                <ColumnName>ANPRId</ColumnName>
+                <DataType>NUMBER</DataType>
+                <PrimaryKey>false</PrimaryKey>
+                <NullsAllowed>false</NullsAllowed>
+                <Size>10</Size>
+                <PopulateWith>
+                    <DataGenerator>
+                        <NumberGenerator>
+                            <id>DG1</id>
+                            <Start>1000</Start>
+                            <End>30000</End>
+                            <OrderedSequence>false</OrderedSequence>
+                            <PercentageNull>0</PercentageNull>
+                            <LocalSequence>false</LocalSequence>
+                            <NormalDistribution>false</NormalDistribution>
+                        </NumberGenerator>
+                    </DataGenerator>
+                </PopulateWith>
+            </Column>
+            <Column>
+                <ColumnName>collection_time</ColumnName>
+                <DataType>TIMESTAMP</DataType>
+                <PrimaryKey>false</PrimaryKey>
+                <NullsAllowed>false</NullsAllowed>
+                <Size>10</Size>
+                <PopulateWith>
+                    <DataGenerator>
+                        <DateGenerator>
+                            <id>DG2</id>
+                            <Start>2017-01-01T12:21:32.656Z</Start>
+                            <End>2017-12-31T12:21:32.656Z</End>
+                            <RoundUpDay>false</RoundUpDay>
+                            <RoundUpHour>false</RoundUpHour>
+                            <AddToResult>0</AddToResult>
+                            <PercentageNull>0</PercentageNull>
+                        </DateGenerator>
+                    </DataGenerator>
+                </PopulateWith>
+            </Column>
+            <Column>
+                <ColumnName>JSON_Data</ColumnName>
+                <DataType>VARCHAR2</DataType>
+                <PrimaryKey>false</PrimaryKey>
+                <NullsAllowed>false</NullsAllowed>
+                <Size>4000</Size>
+                <PopulateWith>
+                    <DataGenerator>
+                        <RepeatGenerator>
+                            <id>DG3</id>
+                            <RepeatColumn>ANPRId</RepeatColumn>
+                            <PercentageNull>0</PercentageNull>
+                            <prefix>{"ANPRId":</prefix>
+                            <postfix>,</postfix>
+                        </RepeatGenerator>
+                    </DataGenerator>
+                    <DataGenerator>
+                        <RepeatGenerator>
+                            <id>DG4</id>
+                            <RepeatColumn>collection_time</RepeatColumn>
+                            <PercentageNull>0</PercentageNull>
+                            <prefix>"CollectionTime" : "</prefix>
+                            <postfix>", </postfix>
+                        </RepeatGenerator>
+                    </DataGenerator>
+                    <DataGenerator>
+                        <NumberGenerator>
+                            <id>DG5</id>
+                            <Start>1</Start>
+                            <End>1000</End>
+                            <OrderedSequence>false</OrderedSequence>
+                            <PercentageNull>0</PercentageNull>
+                            <prefix>"LocationId" : </prefix>
+                            <postfix>,</postfix>
+                            <LocalSequence>false</LocalSequence>
+                            <NormalDistribution>false</NormalDistribution>
+                        </NumberGenerator>
+                    </DataGenerator>
+                    <DataGenerator>
+                        <CharacterGenerator>
+                            <id>DG6</id>
+                            <CharacterClass>Uppercase Alpha Numeric</CharacterClass>
+                            <MinimumSize>8</MinimumSize>
+                            <MaximumSize>8</MaximumSize>
+                            <PercentageNull>0</PercentageNull>
+                            <prefix>"NumberPlate" : "</prefix>
+                            <postfix>", </postfix>
+                        </CharacterGenerator>
+                    </DataGenerator>
+                    <DataGenerator>
+                        <CharacterGenerator>
+                            <id>DG7</id>
+                            <CharacterClass>Uppercase Alpha Numeric</CharacterClass>
+                            <MinimumSize>14</MinimumSize>
+                            <MaximumSize>14</MaximumSize>
+                            <PercentageNull>50</PercentageNull>
+                            <prefix>"OraCarPassID" : "</prefix>
+                            <postfix>", </postfix>
+                        </CharacterGenerator>
+                    </DataGenerator>
+                    <DataGenerator>
+                        <EnumerationGenerator>
+                            <id>DG14</id>
+                            <EnumerationValues>1,1,1,1,1,1,1,1.5,1.5,2,2,2,5</EnumerationValues>
+                            <MinimumRepetitions>1</MinimumRepetitions>
+                            <MaximumRepetitions>1</MaximumRepetitions>
+                            <PercentageNull>0</PercentageNull>
+                            <prefix>"Payment" : </prefix>
+                            <postfix>,</postfix>
+                            <NormalDistribution>false</NormalDistribution>
+                        </EnumerationGenerator>
+                    </DataGenerator>
+                    <DataGenerator>
+                        <EnumerationGenerator>
+                            <id>DG9</id>
+                            <EnumerationValues>Red,Green,Yellow,Silver,Unknown,Black,Gray,White,Black,Blue,Gray,Black,Gray,Red,Gray,Gray</EnumerationValues>
+                            <MinimumRepetitions>1</MinimumRepetitions>
+                            <MaximumRepetitions>1</MaximumRepetitions>
+                            <PercentageNull>0</PercentageNull>
+                            <prefix>"VehicleColour" : "</prefix>
+                            <postfix>",</postfix>
+                            <NormalDistribution>false</NormalDistribution>
+                        </EnumerationGenerator>
+                    </DataGenerator>
+                    <DataGenerator>
+                        <EnumerationGenerator>
+                            <id>DG10</id>
+                            <EnumerationValues>SUV,SUV,SUV,Unknown,Compact,Compact,Compact,Compact,Compact,Compact,Pickup,Lorry</EnumerationValues>
+                            <MinimumRepetitions>1</MinimumRepetitions>
+                            <MaximumRepetitions>1</MaximumRepetitions>
+                            <PercentageNull>0</PercentageNull>
+                            <prefix>"VehicleType" : "</prefix>
+                            <postfix>", </postfix>
+                            <NormalDistribution>false</NormalDistribution>
+                        </EnumerationGenerator>
+                    </DataGenerator>
+                    <DataGenerator>
+                        <EnumerationGenerator>
+                            <id>DG12</id>
+                            <EnumerationValues>N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,Y,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N</EnumerationValues>
+                            <MinimumRepetitions>1</MinimumRepetitions>
+                            <MaximumRepetitions>1</MaximumRepetitions>
+                            <PercentageNull>0</PercentageNull>
+                            <prefix>"WatchList" : "</prefix>
+                            <postfix>",</postfix>
+                            <NormalDistribution>false</NormalDistribution>
+                        </EnumerationGenerator>
+                    </DataGenerator>
+                    <DataGenerator>
+                        <CharacterGenerator>
+                            <id>DG13</id>
+                            <CharacterClass>Alpha Numeric</CharacterClass>
+                            <MinimumSize>1000</MinimumSize>
+                            <MaximumSize>1000</MaximumSize>
+                            <PercentageNull>0</PercentageNull>
+                            <prefix>"NumberPlateImage" : "</prefix>
+                            <postfix>"}</postfix>
+                        </CharacterGenerator>
+                    </DataGenerator>
+                </PopulateWith>
+            </Column>
+        </Columns>
+        <Partition>
+            <PartitionKey>ANPRId</PartitionKey>
+            <NumberOfPartitions>16</NumberOfPartitions>
+        </Partition>
+        <Scaleable>true</Scaleable>
+        <ScaleRatio>1.0</ScaleRatio>
+    </Table>
+    <PreGenerationScript/>
+    <PostGenerationScript/>
+</TableDataGenerator>
