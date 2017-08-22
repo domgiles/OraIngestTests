@@ -159,7 +159,7 @@
                     </DataGenerator>
                     <DataGenerator>
                         <CharacterGenerator>
-                            <id>DG13</id>
+                            <id>IMAGE_GENERATOR</id>
                             <CharacterClass>Alpha Numeric</CharacterClass>
                             <MinimumSize>1000</MinimumSize>
                             <MaximumSize>1000</MaximumSize>
