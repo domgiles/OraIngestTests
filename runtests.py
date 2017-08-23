@@ -12,7 +12,7 @@ from os.path import expanduser
 from prettytable import PrettyTable
 from tqdm import tqdm
 
-runCommand = "{path_to_command} -c {config_file} -u {user_name} -p {pass_word} -cs {connect_string} -bs {batch_size} -commit {commit_size} -scale {scale} -db -cl -nodrop -noddl -tc {threads} -trunc -async"
+runCommand = "{path_to_command} -c {config_file} -u {user_name} -p {pass_word} -cs {connect_string} -bs {batch_size} -commit {commit_size} -scale {scale} -db -cl -nodrop -noddl -tc {threads} -trunc {async}"
 DEFAULT_BATCH_SIZE = 100
 DEFAULT_COMMIT_SIZE = 100
 DEFAULT_SCALE = 1
@@ -26,6 +26,7 @@ DEFAULT_DOC_CONFIG = "anpr_document.xml"
 def print_results(results, *description):
     cols = description + ("Rows/Sec",)
     table = PrettyTable(cols)
+    table.align = 'r'
     for row in results:
         table.add_row(row)
     print(table)
@@ -59,32 +60,42 @@ def changeImageSize(configfile, new_size):
     return new_file
 
 
-def run_tests(path_to_executable, config, username, password, connect_string, commit_sizes, batch_sizes, threads, scale):
+def run_tests(path_to_executable, config, username, password, connect_string, commit_sizes, batch_sizes, image_sizes, threads, scale, async):
     results = []
 
-    logging.debug("\nconfig : {}\nusername : {}\npassword : {}\nconnect string : {}\ncommit_sizes : {}\nbatch_sizes : {}\npath : {}".format(config, username, password, connect_string, commit_sizes, batch_sizes, path))
+    logging.debug("\nconfig : {}\nusername : {}\npassword : {}\nconnect string : {}\ncommit_sizes : {}\nbatch_sizes : {}\npath : {}\nscale : {}\nasync : {}\nimage_sizes : {}".format(
+                  config, username, password, connect_string, commit_sizes, batch_sizes, path, scale, async, image_sizes))
+
 
     try:
-        with tqdm(desc="Tests Run", total=len(commit_sizes) * len(batch_sizes)) as pbar:
+        with tqdm(desc="Tests Run", total=len(commit_sizes) * len(batch_sizes) * len(image_sizes)) as pbar:
             for commit_size in commit_sizes:
                 for batch_size in batch_sizes:
-                    execute = runCommand.format(path_to_command=path_to_executable,
-                                                config_file=config,
-                                                user_name=username,
-                                                pass_word=password,
-                                                connect_string=connect_string,
-                                                batch_size=batch_size,
-                                                commit_size=commit_size,
-                                                threads=threads,
-                                                scale=scale)
-                    logging.debug("Command to execute : {}".format(execute))
-                    p = subprocess.Popen(execute, stdout=subprocess.PIPE, shell=True)
-                    (output, err) = p.communicate()
-                    s = re.findall("(Rows Inserted per sec[\s]*)([0-9,]*)", output.decode("utf-8"))
-                    rows_processed = s[0][1]
-                    results.append((commit_size, batch_size, rows_processed))
-                    pbar.update(1)
-        print_results(results, "Commit Size", "Batch Size")
+                    for image_size in image_sizes:
+                        new_config = changeImageSize(config,image_size)
+                        execute = runCommand.format(path_to_command=path_to_executable,
+                                                    config_file=new_config,
+                                                    user_name=username,
+                                                    pass_word=password,
+                                                    connect_string=connect_string,
+                                                    batch_size=batch_size,
+                                                    commit_size=commit_size,
+                                                    threads=threads,
+                                                    scale=scale,
+                                                    async=('-async' if async else ''))
+                        logging.debug("Command to execute : {}".format(execute))
+                        p = subprocess.Popen(execute, stdout=subprocess.PIPE, shell=True)
+                        (output, err) = p.communicate()
+                        s = re.findall("(Rows Inserted per sec[\s]*)([0-9,]*)", output.decode("utf-8"))
+                        t = re.findall("(Actual Rows Generated[\s]*)([0-9,]*)", output.decode("utf-8"))
+                        u = re.findall("(Data Generation Time[\s]*)([0-9:.]*)", output.decode("utf-8"))
+                        rows_processed = s[0][1]
+                        rows_inserted = t[0][1]
+                        time_taken = u[0][1]
+                        results.append((commit_size, batch_size, image_size, async, rows_inserted, time_taken, rows_processed))
+                        os.remove(new_config)
+                        pbar.update(1)
+        print_results(results, "Commit Size", "Batch Size", "Image Size", "Async", "Total Rows Inserted", "Time Taken")
     except Exception as e:
         print("Unable to run test : {}".format(e.message), file=sys.stderr)
         logging.exception("Unable to run test")
@@ -101,9 +112,9 @@ if __name__ == '__main__':
     parser.add_argument("-tc", "--threads", help="number of threads to run test with (default=1)", default=DEFAULT_THREAD_COUNT)
     parser.add_argument("-scale", "-scale", help="scale/size of benchmark (default=1)", default=DEFAULT_SCALE)
     parser.add_argument("-dgl", "--dglocation", help="path to the datagenerator executable", default=DEFAULT_DATAGEN_LOCATION)
-    parser.add_argument("-is", "--imagesize", help="size of image file created for each record", default=DEFAUT_IMAGE_SIZE)
+    parser.add_argument("-is", "--imagesizes", help="list of image sizes to run tests with (comma seperated)", default=DEFAUT_IMAGE_SIZE)
     parser.add_argument("-debug", help="output debug to stdout", dest='debug_on', action='store_true')
-    parser.add_argument("-async", help="Use ", dest='debug_on', action='store_true')
+    parser.add_argument("-async", help="Use ", dest='async_on', action='store_true')
 
     args = parser.parse_args()
 
@@ -117,15 +128,26 @@ if __name__ == '__main__':
     thread_count = args.threads
     scale = args.scale
     dg_location = args.dglocation
-    image_size = args.imagesize
+    image_size = args.imagesizes
+
 
     commit_sizes = []
     if args.commitsizes is not None:
         commit_sizes = args.commitsizes.split(",")
+    else:
+        commit_sizes = [DEFAULT_COMMIT_SIZE]
 
     batch_sizes = []
     if args.batchsizes is not None:
         batch_sizes = args.batchsizes.split(",")
+    else:
+        batch_sizes = [DEFAULT_BATCH_SIZE]
+
+    image_sizes = []
+    if args.imagesizes is not None:
+        image_sizes = args.imagesizes.split(",")
+    else:
+        image_sizes = [DEFAUT_IMAGE_SIZE]
 
     config = None
     path = os.path.dirname(os.path.realpath(sys.argv[0]))
@@ -134,8 +156,4 @@ if __name__ == '__main__':
     else:
         config = "{0}/{1}".format(path, DEFAULT_DOC_CONFIG)
 
-    new_config = changeImageSize(config, image_size)
-
-    run_tests(dg_location, new_config, username, password, connect_string, commit_sizes=commit_sizes, batch_sizes=batch_sizes, threads=thread_count, scale=scale)
-
-    os.remove(new_config)
+    run_tests(dg_location, config, username, password, connect_string, commit_sizes=commit_sizes, batch_sizes=batch_sizes, image_sizes=image_sizes, threads=thread_count, scale=scale, async=args.async_on)
