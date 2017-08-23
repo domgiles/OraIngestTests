@@ -41,8 +41,8 @@ def set_logging(level):
     logger.addHandler(ch)
 
 
-def changeImageSize(file, new_size):
-    tree = ET.ElementTree(file=file)
+def changeImageSize(configfile, new_size):
+    tree = ET.ElementTree(file=configfile)
 
     root = tree.getroot()
 
@@ -54,7 +54,7 @@ def changeImageSize(file, new_size):
     minimum_element.text = str(new_size)
     maximum_element.text = str(new_size)
 
-    new_file = '{}/copy_{}'.format(os.path.dirname(file), os.path.basename(file))
+    new_file = '{}/copy_{}'.format(os.path.dirname(configfile), os.path.basename(configfile))
     tree.write(new_file)
     return new_file
 
@@ -80,7 +80,7 @@ def run_tests(path_to_executable, config, username, password, connect_string, co
                     logging.debug("Command to execute : {}".format(execute))
                     p = subprocess.Popen(execute, stdout=subprocess.PIPE, shell=True)
                     (output, err) = p.communicate()
-                    s = re.findall("(Rows Inserted per sec[\s]*)([0-9,]*)", output)
+                    s = re.findall("(Rows Inserted per sec[\s]*)([0-9,]*)", output.decode("utf-8"))
                     rows_processed = s[0][1]
                     results.append((commit_size, batch_size, rows_processed))
                     pbar.update(1)
@@ -103,6 +103,7 @@ if __name__ == '__main__':
     parser.add_argument("-dgl", "--dglocation", help="path to the datagenerator executable", default=DEFAULT_DATAGEN_LOCATION)
     parser.add_argument("-is", "--imagesize", help="size of image file created for each record", default=DEFAUT_IMAGE_SIZE)
     parser.add_argument("-debug", help="output debug to stdout", dest='debug_on', action='store_true')
+    parser.add_argument("-async", help="Use ", dest='debug_on', action='store_true')
 
     args = parser.parse_args()
 
@@ -116,14 +117,14 @@ if __name__ == '__main__':
     thread_count = args.threads
     scale = args.scale
     dg_location = args.dglocation
-    image_size=args.imagesize
+    image_size = args.imagesize
 
     commit_sizes = []
-    if args.commitsizes != None:
+    if args.commitsizes is not None:
         commit_sizes = args.commitsizes.split(",")
 
     batch_sizes = []
-    if args.batchsizes != None:
+    if args.batchsizes is not None:
         batch_sizes = args.batchsizes.split(",")
 
     config = None
