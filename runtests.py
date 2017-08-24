@@ -133,25 +133,25 @@ if __name__ == '__main__':
 
     commit_sizes = []
     if args.commitsizes is not None:
-        commit_sizes = args.commitsizes.split(",")
+        commit_sizes = str(args.commitsizes).split(",")
     else:
         commit_sizes = [DEFAULT_COMMIT_SIZE]
 
     batch_sizes = []
     if args.batchsizes is not None:
-        batch_sizes = args.batchsizes.split(",")
+        batch_sizes = str(args.batchsizes).split(",")
     else:
         batch_sizes = [DEFAULT_BATCH_SIZE]
 
     image_sizes = []
     if args.imagesizes is not None:
-        image_sizes = args.imagesizes.split(",")
+        image_sizes = str(args.imagesizes).split(",")
     else:
         image_sizes = [DEFAUT_IMAGE_SIZE]
 
     thread_counts = []
     if args.threads is not None:
-        thread_counts = args.threads.split(",")
+        thread_counts = str(args.threads).split(",")
     else:
         thread_counts = [DEFAULT_THREAD_COUNT]
 
