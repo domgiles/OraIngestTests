@@ -2,13 +2,13 @@ from __future__ import print_function
 
 import argparse
 import logging
+import os
+import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
-
-import os
-import re
 from os.path import expanduser
+
 from prettytable import PrettyTable
 from tqdm import tqdm
 
@@ -16,11 +16,11 @@ runCommand = "{path_to_command} -c {config_file} -u {user_name} -p {pass_word} -
 DEFAULT_BATCH_SIZE = 100
 DEFAULT_COMMIT_SIZE = 100
 DEFAULT_SCALE = 1
-DEFAUT_IMAGE_SIZE = 2000
+DEFAUT_IMAGE_MULTIPLIER = 1
 DEFAULT_THREAD_COUNT = 1
 DEFAULT_DATAGEN_LOCATION = expanduser("~") + "/datagenerator/bin/datagenerator"
-DEFAULT_REL_CONFIG = "anpr_relational.xml"
-DEFAULT_DOC_CONFIG = "anpr_document.xml"
+DEFAULT_REL_CONFIG = "anpr_relationalv2.xml"
+DEFAULT_DOC_CONFIG = "anpr_documentv2.xml"
 
 
 def print_results(results, *description):
@@ -49,8 +49,8 @@ def changeImageSize(configfile, new_size):
 
     ns = "{http://www.domincgiles.com/datagen}"
 
-    minimum_element = root.find(".//{}CharacterGenerator[{}id='IMAGE_GENERATOR']/{}MinimumSize".format(ns, ns, ns))
-    maximum_element = root.find(".//{}CharacterGenerator[{}id='IMAGE_GENERATOR']/{}MaximumSize".format(ns, ns, ns))
+    minimum_element = root.find(".//{}EnumerationGenerator[{}id='IMAGE_GENERATOR']/{}MinimumRepetitions".format(ns, ns, ns))
+    maximum_element = root.find(".//{}EnumerationGenerator[{}id='IMAGE_GENERATOR']/{}MaximumRepetitions".format(ns, ns, ns))
 
     minimum_element.text = str(new_size)
     maximum_element.text = str(new_size)
@@ -60,20 +60,19 @@ def changeImageSize(configfile, new_size):
     return new_file
 
 
-def run_tests(path_to_executable, config, username, password, connect_string, commit_sizes, batch_sizes, image_sizes, threads, scale, async):
+def run_tests(path_to_executable, config, username, password, connect_string, commit_sizes, batch_sizes, image_multipliers, threads, scale, async):
     results = []
 
     logging.debug("\nconfig : {}\nusername : {}\npassword : {}\nconnect string : {}\ncommit_sizes : {}\nbatch_sizes : {}\npath : {}\nscale : {}\nasync : {}\nimage_sizes : {}\nthread_counts : {}".format(
-                  config, username, password, connect_string, commit_sizes, batch_sizes, path, scale, async, image_sizes, threads))
-
+        config, username, password, connect_string, commit_sizes, batch_sizes, path, scale, async, image_multipliers, threads))
 
     try:
-        with tqdm(desc="Tests Run", total=len(commit_sizes) * len(batch_sizes) * len(image_sizes) * len(threads)) as pbar:
+        with tqdm(desc="Tests Run", total=len(commit_sizes) * len(batch_sizes) * len(image_multipliers) * len(threads)) as pbar:
             for commit_size in commit_sizes:
                 for batch_size in batch_sizes:
-                    for image_size in image_sizes:
+                    for image_multiplier in image_multipliers:
                         for thread_count in threads:
-                            new_config = changeImageSize(config,image_size)
+                            new_config = changeImageSize(config, image_multiplier)
                             execute = runCommand.format(path_to_command=path_to_executable,
                                                         config_file=new_config,
                                                         user_name=username,
@@ -93,7 +92,7 @@ def run_tests(path_to_executable, config, username, password, connect_string, co
                             rows_processed = s[0][1]
                             rows_inserted = t[0][1]
                             time_taken = u[0][1]
-                            results.append((thread_count, commit_size, batch_size, image_size, async, rows_inserted, time_taken, rows_processed))
+                            results.append((thread_count, commit_size, batch_size, int(image_multiplier) * 100, async, rows_inserted, time_taken, rows_processed))
                             os.remove(new_config)
                             pbar.update(1)
         print_results(results, "Thread Count", "Commit Size", "Batch Size", "Image Size", "Async", "Total Rows Inserted", "Time Taken")
@@ -113,7 +112,7 @@ if __name__ == '__main__':
     parser.add_argument("-tc", "--threads", help="list of thread counts to run test with (default=1)", default=DEFAULT_THREAD_COUNT)
     parser.add_argument("-scale", "-scale", help="scale/size of benchmark (default=1)", default=DEFAULT_SCALE)
     parser.add_argument("-dgl", "--dglocation", help="path to the datagenerator executable", default=DEFAULT_DATAGEN_LOCATION)
-    parser.add_argument("-is", "--imagesizes", help="list of image sizes to run tests with (comma seperated)", default=DEFAUT_IMAGE_SIZE)
+    parser.add_argument("-im", "--imagemultipliers", help="list of image multipliers (comma seperated, default = 1)", default=DEFAUT_IMAGE_MULTIPLIER)
     parser.add_argument("-debug", help="output debug to stdout", dest='debug_on', action='store_true')
     parser.add_argument("-async", help="Use ", dest='async_on', action='store_true')
 
@@ -128,8 +127,6 @@ if __name__ == '__main__':
     test_type = args.schematype
     scale = args.scale
     dg_location = args.dglocation
-    image_size = args.imagesizes
-
 
     commit_sizes = []
     if args.commitsizes is not None:
@@ -143,11 +140,11 @@ if __name__ == '__main__':
     else:
         batch_sizes = [DEFAULT_BATCH_SIZE]
 
-    image_sizes = []
-    if args.imagesizes is not None:
-        image_sizes = str(args.imagesizes).split(",")
+    image_multipliers = []
+    if args.imagemultipliers is not None:
+        image_multipliers = str(args.imagemultipliers).split(",")
     else:
-        image_sizes = [DEFAUT_IMAGE_SIZE]
+        image_multipliers = [DEFAUT_IMAGE_MULTIPLIER]
 
     thread_counts = []
     if args.threads is not None:
@@ -162,4 +159,4 @@ if __name__ == '__main__':
     else:
         config = "{0}/{1}".format(path, DEFAULT_DOC_CONFIG)
 
-    run_tests(dg_location, config, username, password, connect_string, commit_sizes=commit_sizes, batch_sizes=batch_sizes, image_sizes=image_sizes, threads=thread_counts, scale=scale, async=args.async_on)
+    run_tests(dg_location, config, username, password, connect_string, commit_sizes=commit_sizes, batch_sizes=batch_sizes, image_multipliers=image_multipliers, threads=thread_counts, scale=scale, async=args.async_on)
