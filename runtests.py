@@ -162,7 +162,9 @@ if __name__ == '__main__':
     path = os.path.dirname(os.path.realpath(sys.argv[0]))
     if test_type == "relational":
         config = "{0}/{1}".format(path, DEFAULT_REL_CONFIG)
-    else:
+    elif test_type == 'document':
         config = "{0}/{1}".format(path, DEFAULT_DOC_CONFIG)
+    else:
+        config = "{0}/{1}".format(path, DEFAULT_SIMPLE_CONFIG)
 
     run_tests(dg_location, config, username, password, connect_string, commit_sizes=commit_sizes, batch_sizes=batch_sizes, image_multipliers=image_multipliers, threads=thread_counts, scale=scale, async=args.async_on, test_type=test_type)
