@@ -10,8 +10,8 @@ import threading
 from threading import Thread
 
 path_to_executable = '/Users/dgiles/sqlcl/bin/sql'
-runCommand = "{path_to_command} {user_name}/{pass_word}@{connect_string} << EOF\nselect 1 from dual\nexit;\nEOF"
-# runCommand = "{path_to_command} {user_name}/{pass_word}@{connect_string} control={control_file}"
+# runCommand = "{path_to_command} {user_name}/{pass_word}@{connect_string} << EOF\nselect 1 from dual\nexit;\nEOF"
+runCommand = "{path_to_command} {user_name}/{pass_word}@{connect_string} control={control_file}"
 
 
 def set_logging(level):
@@ -23,13 +23,13 @@ def set_logging(level):
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
-def executeCommand(command):
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+def executeCommand(working_directory, command):
+    p = subprocess.Popen(command, shell=True, cwd=working_directory)
     (output, err) = p.communicate()
     logging.debug(output)
 
 
-def run_tests(path_to_executable, username, password, connect_string, control_files):
+def run_tests(path_to_executable, username, password, connect_string, working_directory, control_files):
     results = []
 
     logging.debug("\nusername : {}\npassword : {}\nconnect string : {}\ndirecotries : {}\n".format(
@@ -43,7 +43,7 @@ def run_tests(path_to_executable, username, password, connect_string, control_fi
                                         connect_string=connect_string,
                                         control_file=control_file)
             logging.debug("Command to execute : {}".format(executeCommandString))
-            thread = Thread(target=executeCommand, args=(executeCommandString,))
+            thread = Thread(target=executeCommand, args=(working_directory, executeCommandString,))
             threads.append(thread)
         for thread in threads:
             thread.start()
@@ -80,4 +80,4 @@ if __name__ == '__main__':
         if file.endswith(".ctl"):
             controlfiles.append(os.path.join(args.directory, file))
 
-    run_tests(path_to_executable, username, password, connect_string, controlfiles)
+    run_tests(path_to_executable, username, password, connect_string, working_directory=args.directory, control_files=controlfiles)
