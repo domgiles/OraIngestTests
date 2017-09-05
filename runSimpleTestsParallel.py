@@ -93,7 +93,7 @@ def run_tests(path_to_executable, username, password, connect_string, row_counts
                     thread_counts[0],
                     "{0:,.2f}".format(end - start),
                     "{0:,.2f}".format(insertion_time),
-                    "{0:,.0f}".format(rows_processed / max_insertion_time),)]
+                    "{0:,.0f}".format(rows_inserted / max_insertion_time),)]
         description = ("JVMs Started", "Total Rows Inserted", "Batch Size", "Commit Size", "Threads", "Real Time Taken", "Total Insert Time", "Rows/sec Inserted")
         print_results(results, description)
         print("Individual JVM Results")

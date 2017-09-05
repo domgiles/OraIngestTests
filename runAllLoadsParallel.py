@@ -3,15 +3,13 @@ from __future__ import print_function
 import argparse
 import logging
 import os
-import sys
 import subprocess
-import select
-import threading
+import sys
 from threading import Thread
 
+
 path_to_executable = '/Users/dgiles/sqlcl/bin/sql'
-# runCommand = "{path_to_command} {user_name}/{pass_word}@{connect_string} << EOF\nselect 1 from dual\nexit;\nEOF"
-runCommand = "{path_to_command} {user_name}/{pass_word}@{connect_string} control={control_file}"
+runCommand = "{path_to_command} {user_name}/{pass_word}@{connect_string} rows=5000 control={control_file} direct=false"
 
 
 def set_logging(level):
@@ -22,6 +20,7 @@ def set_logging(level):
     formatter = logging.Formatter('%(levelname)s[%(asctime)s]%(module)s:%(funcName)s: %(message)s')
     ch.setFormatter(formatter)
     logger.addHandler(ch)
+
 
 def executeCommand(working_directory, command):
     p = subprocess.Popen(command, shell=True, cwd=working_directory)
@@ -38,10 +37,10 @@ def run_tests(path_to_executable, username, password, connect_string, working_di
     try:
         for control_file in control_files:
             executeCommandString = runCommand.format(path_to_command=path_to_executable,
-                                        user_name=username,
-                                        pass_word=password,
-                                        connect_string=connect_string,
-                                        control_file=control_file)
+                                                     user_name=username,
+                                                     pass_word=password,
+                                                     connect_string=connect_string,
+                                                     control_file=control_file)
             logging.debug("Command to execute : {}".format(executeCommandString))
             thread = Thread(target=executeCommand, args=(working_directory, executeCommandString,))
             threads.append(thread)
