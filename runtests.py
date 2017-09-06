@@ -47,6 +47,7 @@ def print_results(results, *description):
 
 
 def executeCommand(command):
+    rows_processed, rows_inserted, connection_time, insertion_time = 0, 0, 0, 0
     logging.debug("Command to execute : {}".format(command))
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
     (output, err) = p.communicate()
@@ -54,10 +55,14 @@ def executeCommand(command):
     t = re.findall("(Actual Rows Generated[\s]*)([0-9,]*)", output.decode("utf-8"))
     c = re.findall("(Connection Time[\s]*)([0-9.:]*)", output.decode("utf-8"))
     i = re.findall("(Data Generation Time[\s]*)([0-9.:]*)", output.decode("utf-8"))
-    rows_processed = int(s[0][1].replace(',', ''))
-    rows_inserted = int(t[0][1].replace(',', ''))
-    connection_time = timingtoseconds(c[0][1])
-    insertion_time = timingtoseconds(i[0][1])
+    if (len(s) != 0):
+        rows_processed = int(s[0][1].replace(',', ''))
+    if (len(t) != 0):
+        rows_inserted = int(t[0][1].replace(',', ''))
+    if (len(c) != 0):
+        connection_time = timingtoseconds(c[0][1])
+    if (len(i) != 0):
+        insertion_time = timingtoseconds(i[0][1])
     process_results.append((connection_time, rows_inserted, insertion_time, rows_processed,))
 
 
@@ -89,23 +94,21 @@ def changeImageSize(configfile, new_size):
     return new_file
 
 
-def run_tests(path_to_executable, config, username, password, connect_string, commit_sizes, batch_sizes, image_multipliers, threads, scale, async, test_type, processes, jvm_display):
-
-
+def run_tests(path_to_executable, config, username, password, connect_string, commit_sizes, batch_sizes, image_multipliers, thread_counts, scale, async, test_type, processes, jvm_display):
     logging.debug("\nconfig : {}\nusername : {}\npassword : {}\nconnect string : {}\ncommit_sizes : {}\nbatch_sizes : {}\npath : {}\nscale : {}\nasync : {}\nimage_sizes : {}\nthread_counts : {}\njvms started : {}".format(
-        config, username, password, connect_string, commit_sizes, batch_sizes, path, scale, async, image_multipliers, threads, processes[0]))
+        config, username, password, connect_string, commit_sizes, batch_sizes, path, scale, async, image_multipliers, thread_counts, processes[0]))
 
     try:
-        with tqdm(desc="Tests Run", total=len(commit_sizes) * len(batch_sizes) * len(image_multipliers) * len(threads)) as pbar:
+        with tqdm(desc="Tests Run", total=len(commit_sizes) * len(batch_sizes) * len(image_multipliers) * len(thread_counts)) as pbar:
             for commit_size in commit_sizes:
                 for batch_size in batch_sizes:
                     for image_multiplier in image_multipliers:
-                        for thread_count in threads:
+                        for thread_count in thread_counts:
                             if test_type != 'simple':
                                 new_config = changeImageSize(config, image_multiplier)
                             else:
                                 new_config = config
-                            threads = []
+                            my_threads = []
                             start = time.time()
                             for process in range(0, int(processes[0])):
                                 executeCommandString = runCommand.format(path_to_command=path_to_executable,
@@ -120,11 +123,11 @@ def run_tests(path_to_executable, config, username, password, connect_string, co
                                                                          async=('-async' if async else ''))
 
                                 thread = Thread(target=executeCommand, args=(executeCommandString,))
-                                threads.append(thread)
+                                my_threads.append(thread)
 
-                            for thread in threads:
+                            for thread in my_threads:
                                 thread.start()
-                            for thread in threads:
+                            for thread in my_threads:
                                 thread.join()
                             end = time.time()
                             insertion_time, connection_time, rows_inserted, rows_processed, max_insertion_time = 0, 0, 0, 0, 0
@@ -145,7 +148,7 @@ def run_tests(path_to_executable, config, username, password, connect_string, co
                                             rows_inserted,
                                             "{0:,.2f}".format(end - start),
                                             "{0:,.2f}".format(insertion_time),
-                                            "{0:,.0f}".format(rows_inserted / max_insertion_time),))
+                                            "{0:,.0f}".format((rows_inserted / max_insertion_time) if max_insertion_time != 0 else 0),))
                             if test_type != 'simple':
                                 os.remove(new_config)
                             pbar.update(1)
@@ -176,8 +179,6 @@ if __name__ == '__main__':
     parser.add_argument("-async", help="Use ", dest='async_on', action='store_true')
 
     args = parser.parse_args()
-
-
 
     if args.debug_on:
         set_logging(level=logging.DEBUG)
@@ -230,5 +231,5 @@ if __name__ == '__main__':
     else:
         config = "{0}/{1}".format(path, DEFAULT_SIMPLE_CONFIG)
 
-    run_tests(dg_location, config, username, password, connect_string, commit_sizes=commit_sizes, batch_sizes=batch_sizes, image_multipliers=image_multipliers, threads=thread_counts, scale=scale, async=args.async_on, test_type=test_type,
+    run_tests(dg_location, config, username, password, connect_string, commit_sizes=commit_sizes, batch_sizes=batch_sizes, image_multipliers=image_multipliers, thread_counts=thread_counts, scale=scale, async=args.async_on, test_type=test_type,
               processes=process_counts, jvm_display=args.jvm_display)
