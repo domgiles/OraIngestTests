@@ -15,7 +15,7 @@ from threading import Thread
 from prettytable import PrettyTable
 from tqdm import tqdm
 
-runCommand = "{path_to_command} -c {config_file} -u {user_name} -p {pass_word} -cs {connect_string} -bs {batch_size} -commit {commit_size} -scale {scale} -db -cl -nodrop -noddl -tc {threads} -trunc {async}"
+runCommand = "{path_to_command} -c {config_file} -u {user_name} -p {pass_word} -cs {connect_string} -bs {batch_size} -commit {commit_size} -scale {scale} -db -cl -nodrop -noddl -tc {threads} {async}"
 DEFAULT_BATCH_SIZE = 100
 DEFAULT_COMMIT_SIZE = 100
 DEFAULT_SCALE = 1
@@ -28,6 +28,7 @@ DEFAULT_SIMPLE_CONFIG = "anpr_simple.xml"
 DEFAULT_JVM_COUNT = 1
 
 process_results = []
+results = []
 
 
 def timingtoseconds(timingstring):
@@ -89,7 +90,7 @@ def changeImageSize(configfile, new_size):
 
 
 def run_tests(path_to_executable, config, username, password, connect_string, commit_sizes, batch_sizes, image_multipliers, threads, scale, async, test_type, processes, jvm_display):
-    results = []
+
 
     logging.debug("\nconfig : {}\nusername : {}\npassword : {}\nconnect string : {}\ncommit_sizes : {}\nbatch_sizes : {}\npath : {}\nscale : {}\nasync : {}\nimage_sizes : {}\nthread_counts : {}\njvms started : {}".format(
         config, username, password, connect_string, commit_sizes, batch_sizes, path, scale, async, image_multipliers, threads, processes[0]))
@@ -150,6 +151,7 @@ def run_tests(path_to_executable, config, username, password, connect_string, co
                             pbar.update(1)
                             if jvm_display:
                                 print_results(process_results, "Connection Time", "Rows Processed", "Insert Time", "Rows/sec Inserted")
+                            del process_results[:]
         print_results(results, "JVMs Started", "Thread Count", "Commit Size", "Batch Size", "Image Size", "Async", "Total Rows Inserted", "Real Time Taken", "Total Insert Time", "Rows/sec Inserted")
     except Exception as e:
         print("Unable to run test : {}".format(e.message), file=sys.stderr)
