@@ -16,7 +16,7 @@ from prettytable import PrettyTable
 from tqdm import tqdm
 
 runCommand = "{path_to_command} -c {config_file} -u {user_name} -p {pass_word} -cs {connect_string} -bs {batch_size} -commit {commit_size} -scale {scale} -db -cl -nodrop -noddl -tc {threads} {async}"
-SCRIPT_RUNNER = "/Users/dgiles/sqlcl/bin/sql"
+SCRIPT_RUNNER = expanduser("~") + "/sqlcl/bin/sql"
 DEFAULT_BATCH_SIZE = 100
 DEFAULT_COMMIT_SIZE = 100
 DEFAULT_SCALE = 1

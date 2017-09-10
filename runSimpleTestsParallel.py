@@ -6,6 +6,7 @@ import re
 import subprocess
 import sys
 import time
+from os.path import expanduser
 from threading import Thread
 
 from prettytable import PrettyTable
@@ -17,7 +18,7 @@ DEFAULT_JVM_COUNT = 1
 DEFAULT_THREAD_COUNT = 1
 SCRIPT_RUNNER = "/Users/dgiles/sqlcl/bin/sql"
 
-path_to_executable = 'java -jar /Users/dgiles/java/SimpleOraTest/out/artifacts/SimpleOraTest_jar/SimpleOraTest.jar'
+path_to_executable = 'java -jar ' + expanduser("~") + '/OraIngestTests/SimpleOraTest.jar'
 runCommand = "{path_to_command} -u {user_name} -p {pass_word} -cs {connect_string} -bs {batch_size} -cf {commit_size} -rc {row_count} -tc {thread_count}"
 
 results = []
@@ -41,6 +42,7 @@ def set_logging(level):
     formatter = logging.Formatter('%(levelname)s[%(asctime)s]%(module)s:%(funcName)s: %(message)s')
     ch.setFormatter(formatter)
     logger.addHandler(ch)
+
 
 def run_script(script_name):
     runcommand = '{} /nolog @{}'.format(SCRIPT_RUNNER, script_name)
