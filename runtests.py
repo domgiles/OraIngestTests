@@ -16,6 +16,7 @@ from prettytable import PrettyTable
 from tqdm import tqdm
 
 runCommand = "{path_to_command} -c {config_file} -u {user_name} -p {pass_word} -cs {connect_string} -bs {batch_size} -commit {commit_size} -scale {scale} -db -cl -nodrop -noddl -tc {threads} {async}"
+SCRIPT_RUNNER = "/Users/dgiles/sqlcl/bin/sql"
 DEFAULT_BATCH_SIZE = 100
 DEFAULT_COMMIT_SIZE = 100
 DEFAULT_SCALE = 1
@@ -44,6 +45,14 @@ def print_results(results, *description):
     for row in results:
         table.add_row(row)
     print(table)
+
+def run_script(script_name):
+    runcommand = '{} /nolog @{}'.format(SCRIPT_RUNNER, script_name)
+    logging.debug("Command to execute : {}".format(runcommand))
+    p = subprocess.Popen(runcommand, shell=True, stdout=subprocess.PIPE)
+    (output, err) = p.communicate()
+    print("Output from script run : \n")
+    print(output)
 
 
 def executeCommand(command):
@@ -94,11 +103,13 @@ def changeImageSize(configfile, new_size):
     return new_file
 
 
-def run_tests(path_to_executable, config, username, password, connect_string, commit_sizes, batch_sizes, image_multipliers, thread_counts, scale, async, test_type, processes, jvm_display):
+def run_tests(path_to_executable, config, username, password, connect_string, commit_sizes, batch_sizes, image_multipliers, thread_counts, scale, async, test_type, processes, jvm_display, script_name):
     logging.debug("\nconfig : {}\nusername : {}\npassword : {}\nconnect string : {}\ncommit_sizes : {}\nbatch_sizes : {}\npath : {}\nscale : {}\nasync : {}\nimage_sizes : {}\nthread_counts : {}\njvms started : {}".format(
         config, username, password, connect_string, commit_sizes, batch_sizes, path, scale, async, image_multipliers, thread_counts, processes[0]))
 
     try:
+        if script_name is not None:
+            run_script(script_name)
         with tqdm(desc="Tests Run", total=len(commit_sizes) * len(batch_sizes) * len(image_multipliers) * len(thread_counts)) as pbar:
             for commit_size in commit_sizes:
                 for batch_size in batch_sizes:
@@ -170,6 +181,7 @@ if __name__ == '__main__':
     parser.add_argument("-com", "--commitsizes", help="list of commit sizes to run test with (comma seperated)")
     parser.add_argument("-bat", "--batchsizes", help="list of batch sizes to run test with (comma seperated)")
     parser.add_argument("-tc", "--threads", help="list of thread counts to run test with (default=1)", default=DEFAULT_THREAD_COUNT)
+    parser.add_argument("-rs", "--runscript", help="run script before starting tests")
     parser.add_argument("-scale", "-scale", help="scale/size of benchmark (default=1)", default=DEFAULT_SCALE)
     parser.add_argument("-dgl", "--dglocation", help="path to the datagenerator executable", default=DEFAULT_DATAGEN_LOCATION)
     parser.add_argument("-im", "--imagemultipliers", help="list of image multipliers (comma seperated, default = 1)", default=DEFAUT_IMAGE_MULTIPLIER)
@@ -189,6 +201,7 @@ if __name__ == '__main__':
     test_type = args.schematype
     scale = args.scale
     dg_location = args.dglocation
+    script_name = args.runscript
 
     logging.debug("Display jvm info : {}".format(args.jvm_display))
 
@@ -231,5 +244,17 @@ if __name__ == '__main__':
     else:
         config = "{0}/{1}".format(path, DEFAULT_SIMPLE_CONFIG)
 
-    run_tests(dg_location, config, username, password, connect_string, commit_sizes=commit_sizes, batch_sizes=batch_sizes, image_multipliers=image_multipliers, thread_counts=thread_counts, scale=scale, async=args.async_on, test_type=test_type,
-              processes=process_counts, jvm_display=args.jvm_display)
+    run_tests(dg_location, config,
+              username,
+              password,
+              connect_string,
+              commit_sizes=commit_sizes,
+              batch_sizes=batch_sizes,
+              image_multipliers=image_multipliers,
+              thread_counts=thread_counts,
+              scale=scale,
+              async=args.async_on,
+              test_type=test_type,
+              processes=process_counts,
+              jvm_display=args.jvm_display,
+              script_name=script_name)

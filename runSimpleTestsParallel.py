@@ -15,6 +15,7 @@ DEFAULT_COMMIT_SIZE = 1
 DEFAULT_ROW_COUNT = 1000
 DEFAULT_JVM_COUNT = 1
 DEFAULT_THREAD_COUNT = 1
+SCRIPT_RUNNER = "/Users/dgiles/sqlcl/bin/sql"
 
 path_to_executable = 'java -jar /Users/dgiles/java/SimpleOraTest/out/artifacts/SimpleOraTest_jar/SimpleOraTest.jar'
 runCommand = "{path_to_command} -u {user_name} -p {pass_word} -cs {connect_string} -bs {batch_size} -cf {commit_size} -rc {row_count} -tc {thread_count}"
@@ -41,6 +42,14 @@ def set_logging(level):
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
+def run_script(script_name):
+    runcommand = '{} /nolog @{}'.format(SCRIPT_RUNNER, script_name)
+    logging.debug("Command to execute : {}".format(runcommand))
+    p = subprocess.Popen(runcommand, shell=True, stdout=subprocess.PIPE)
+    (output, err) = p.communicate()
+    print("Output from script run : \n")
+    print(output)
+
 
 def executeCommand(command):
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
@@ -56,9 +65,11 @@ def executeCommand(command):
     process_results.append((connection_time, rows_inserted, insertion_time, rows_processed,))
 
 
-def run_tests(path_to_executable, username, password, connect_string, row_counts, commit_sizes, batch_sizes, thread_counts, processes):
+def run_tests(path_to_executable, username, password, connect_string, row_counts, commit_sizes, batch_sizes, thread_counts, processes, script_name):
     threads = []
     try:
+        if script_name is not None:
+            run_script(script_name)
         start = time.time()
         for process in range(0, int(processes[0])):
             executeCommandString = runCommand.format(path_to_command=path_to_executable,
@@ -115,6 +126,7 @@ if __name__ == '__main__':
     parser.add_argument("-bat", "--batchsizes", help="list of batch sizes to run test with (comma seperated)")
     parser.add_argument("-tc", "--threads", help="list of thread counts to run test with (default=1)", default=DEFAULT_THREAD_COUNT)
     parser.add_argument("-proc", "--processes", help="number of JVMs to run (default=1)", default=DEFAULT_JVM_COUNT)
+    parser.add_argument("-rs", "--runscript", help="run script before starting tests")
     parser.add_argument("-rc", "--rowcount", help="scale/size of benchmark (default=1)", default=DEFAULT_ROW_COUNT)
     parser.add_argument("-debug", help="output debug to stdout", dest='debug_on', action='store_true')
 
@@ -126,6 +138,7 @@ if __name__ == '__main__':
     username = args.username
     password = args.password
     connect_string = args.connectstring
+    script_name = args.runscript
 
     commit_sizes = []
     if args.commitsizes is not None:
@@ -157,4 +170,13 @@ if __name__ == '__main__':
     else:
         row_counts = [DEFAULT_ROW_COUNT]
 
-    run_tests(path_to_executable, username, password, connect_string, row_counts=row_counts, commit_sizes=commit_sizes, batch_sizes=batch_sizes, thread_counts=thread_counts, processes=process_counts)
+    run_tests(path_to_executable,
+              username,
+              password,
+              connect_string,
+              row_counts=row_counts,
+              commit_sizes=commit_sizes,
+              batch_sizes=batch_sizes,
+              thread_counts=thread_counts,
+              processes=process_counts,
+              script_name=script_name)
