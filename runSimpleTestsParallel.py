@@ -16,7 +16,7 @@ DEFAULT_COMMIT_SIZE = 1
 DEFAULT_ROW_COUNT = 1000
 DEFAULT_JVM_COUNT = 1
 DEFAULT_THREAD_COUNT = 1
-SCRIPT_RUNNER = "/Users/dgiles/sqlcl/bin/sql"
+SCRIPT_RUNNER = expanduser("~") + "/sqlcl/bin/sql"
 
 path_to_executable = 'java -jar ' + expanduser("~") + '/OraIngestTests/SimpleOraTest.jar'
 runCommand = "{path_to_command} -u {user_name} -p {pass_word} -cs {connect_string} -bs {batch_size} -cf {commit_size} -rc {row_count} -tc {thread_count}"
