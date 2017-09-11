@@ -47,6 +47,7 @@ def print_results(results, *description):
     print(table)
 
 def run_script(script_name):
+    print ("Running script {}".format(script_name))
     runcommand = '{} /nolog @{}'.format(SCRIPT_RUNNER, script_name)
     logging.debug("Command to execute : {}".format(runcommand))
     p = subprocess.Popen(runcommand, shell=True, stdout=subprocess.PIPE)
