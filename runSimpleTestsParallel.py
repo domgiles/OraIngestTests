@@ -68,7 +68,7 @@ def executeCommand(command):
     process_results.append((connection_time, rows_inserted, insertion_time, rows_processed,))
 
 
-def run_tests(path_to_executable, username, password, connect_string, row_counts, commit_sizes, batch_sizes, thread_counts, processes, script_name):
+def run_tests(path_to_executable, username, password, connect_string, row_counts, commit_sizes, batch_sizes, thread_counts, processes, script_name, jvm_display):
     threads = []
     try:
         if script_name is not None:
@@ -111,8 +111,9 @@ def run_tests(path_to_executable, username, password, connect_string, row_counts
         description = ("JVMs Started", "Total Rows Inserted", "Batch Size", "Commit Size", "Threads", "Real Time Taken", "Total Insert Time", "Rows/sec Inserted")
         print_results(results, description)
         print("Individual JVM Results")
-        description = ("Connection Time", "Rows Processed", "Insert Time", "Rows/sec Inserted",)
-        print_results(process_results, description)
+        if jvm_display:
+            description = ("Connection Time", "Rows Processed", "Insert Time", "Rows/sec Inserted",)
+            print_results(process_results, description)
         logging.debug("Completed test in {}".format(end - start))
 
     except Exception as e:
@@ -129,6 +130,7 @@ if __name__ == '__main__':
     parser.add_argument("-bat", "--batchsizes", help="list of batch sizes to run test with (comma seperated)")
     parser.add_argument("-tc", "--threads", help="list of thread counts to run test with (default=1)", default=DEFAULT_THREAD_COUNT)
     parser.add_argument("-proc", "--processes", help="number of JVMs to run (default=1)", default=DEFAULT_JVM_COUNT)
+    parser.add_argument("-pd", "--procdisplay", help="show JVM results (default=false)", dest='jvm_display', action='store_true')
     parser.add_argument("-rs", "--runscript", help="run script before starting tests")
     parser.add_argument("-rc", "--rowcount", help="scale/size of benchmark (default=1)", default=DEFAULT_ROW_COUNT)
     parser.add_argument("-debug", help="output debug to stdout", dest='debug_on', action='store_true')
@@ -182,4 +184,5 @@ if __name__ == '__main__':
               batch_sizes=batch_sizes,
               thread_counts=thread_counts,
               processes=process_counts,
-              script_name=script_name)
+              script_name=script_name,
+              jvm_display=args.jvm_display)
