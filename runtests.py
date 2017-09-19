@@ -191,7 +191,7 @@ if __name__ == '__main__':
     parser.add_argument("-pd", "--procdisplay", help="show JVM results (default=false)", dest='jvm_display', action='store_true')
     parser.add_argument("-debug", help="output debug to stdout", dest='debug_on', action='store_true')
     parser.add_argument("-async", help="Use async transactions ", dest='async_on', action='store_true')
-    parser.add_argument("-ss", "-suppress", help="Suppress script output", dest='async_on', action='store_true')
+    parser.add_argument("-ss", "-suppress", help="Suppress script output", dest='supress_script_output', action='store_true')
 
     args = parser.parse_args()
 
@@ -261,4 +261,4 @@ if __name__ == '__main__':
               processes=process_counts,
               jvm_display=args.jvm_display,
               script_name=script_name,
-              supress_script_output=args.suppress)
+              supress_script_output=args.supress_script_output)
