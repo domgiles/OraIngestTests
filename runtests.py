@@ -52,7 +52,7 @@ def run_script(script_name, supress_script_output):
     logging.debug("Command to execute : {}".format(runcommand))
     p = subprocess.Popen(runcommand, shell=True, stdout=subprocess.PIPE)
     (output, err) = p.communicate()
-    if supress_script_output:
+    if not supress_script_output:
         print("Output from script run : \n")
         print(output)
 
