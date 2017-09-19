@@ -46,14 +46,15 @@ def print_results(results, *description):
         table.add_row(row)
     print(table)
 
-def run_script(script_name):
+def run_script(script_name, supress_script_output):
     print ("Running script {}".format(script_name))
     runcommand = '{} /nolog @{}'.format(SCRIPT_RUNNER, script_name)
     logging.debug("Command to execute : {}".format(runcommand))
     p = subprocess.Popen(runcommand, shell=True, stdout=subprocess.PIPE)
     (output, err) = p.communicate()
-    print("Output from script run : \n")
-    print(output)
+    if supress_script_output:
+        print("Output from script run : \n")
+        print(output)
 
 
 def executeCommand(command):
@@ -104,13 +105,13 @@ def changeImageSize(configfile, new_size):
     return new_file
 
 
-def run_tests(path_to_executable, config, username, password, connect_string, commit_sizes, batch_sizes, image_multipliers, thread_counts, scale, async, test_type, processes, jvm_display, script_name):
+def run_tests(path_to_executable, config, username, password, connect_string, commit_sizes, batch_sizes, image_multipliers, thread_counts, scale, async, test_type, processes, jvm_display, script_name, supress_script_output):
     logging.debug("\nconfig : {}\nusername : {}\npassword : {}\nconnect string : {}\ncommit_sizes : {}\nbatch_sizes : {}\npath : {}\nscale : {}\nasync : {}\nimage_sizes : {}\nthread_counts : {}\njvms started : {}".format(
         config, username, password, connect_string, commit_sizes, batch_sizes, path, scale, async, image_multipliers, thread_counts, processes[0]))
 
     try:
         if script_name is not None:
-            run_script(script_name)
+            run_script(script_name, supress_script_output)
         with tqdm(desc="Tests Run", total=len(commit_sizes) * len(batch_sizes) * len(image_multipliers) * len(thread_counts)) as pbar:
             for commit_size in commit_sizes:
                 for batch_size in batch_sizes:
@@ -189,7 +190,8 @@ if __name__ == '__main__':
     parser.add_argument("-proc", "--processes", help="number of JVMs to run (default=1)", default=DEFAULT_JVM_COUNT)
     parser.add_argument("-pd", "--procdisplay", help="show JVM results (default=false)", dest='jvm_display', action='store_true')
     parser.add_argument("-debug", help="output debug to stdout", dest='debug_on', action='store_true')
-    parser.add_argument("-async", help="Use ", dest='async_on', action='store_true')
+    parser.add_argument("-async", help="Use async transactions ", dest='async_on', action='store_true')
+    parser.add_argument("-ss", "-suppress", help="Suppress script output", dest='async_on', action='store_true')
 
     args = parser.parse_args()
 
@@ -258,4 +260,5 @@ if __name__ == '__main__':
               test_type=test_type,
               processes=process_counts,
               jvm_display=args.jvm_display,
-              script_name=script_name)
+              script_name=script_name,
+              supress_script_output=args.suppress)
