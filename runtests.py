@@ -15,7 +15,9 @@ from threading import Thread
 from prettytable import PrettyTable
 from tqdm import tqdm
 
-runCommand = "{path_to_command} -c {config_file} -u {user_name} -p {pass_word} -cs {connect_string} -bs {batch_size} -commit {commit_size} -scale {scale} -db -cl -nodrop -noddl -tc {threads} {async}"
+datagen_run_command = "{path_to_command} -c {config_file} -u {user_name} -p {pass_word} -cs {connect_string} -bs {batch_size} -commit {commit_size} -scale {scale} -db -cl -nodrop -noddl -tc {threads} {async}"
+javatest_run_command = 'java -jar ' + expanduser("~") + '/PycharmProjects/OraIngestTests/SimpleOraTest.jar -u {user_name} -p {pass_word} -cs {connect_string} -bs {batch_size} -cf {commit_size} -rc {row_count} -tc {thread_count} {async}'
+
 SCRIPT_RUNNER = expanduser("~") + "/sqlcl/bin/sql"
 DEFAULT_BATCH_SIZE = 100
 DEFAULT_COMMIT_SIZE = 100
@@ -33,6 +35,8 @@ results = []
 
 
 def timingtoseconds(timingstring):
+
+    # logging.debug("String to parse : {}".format(timingstring))
     delta = (datetime.strptime(timingstring, "%H:%M:%S.%f") - datetime(1900, 1, 1))
     seconds = float(delta.seconds) + (float(delta.microseconds) / 1000000)
     return seconds
@@ -117,23 +121,34 @@ def run_tests(path_to_executable, config, username, password, connect_string, co
                 for batch_size in batch_sizes:
                     for image_multiplier in image_multipliers:
                         for thread_count in thread_counts:
-                            if test_type != 'simple':
+                            if test_type == 'relational' or test_type == 'document':
                                 new_config = changeImageSize(config, image_multiplier)
                             else:
                                 new_config = config
                             my_threads = []
                             start = time.time()
                             for process in range(0, int(processes[0])):
-                                executeCommandString = runCommand.format(path_to_command=path_to_executable,
-                                                                         config_file=new_config,
-                                                                         user_name=username,
-                                                                         pass_word=password,
-                                                                         connect_string=connect_string,
-                                                                         batch_size=batch_size,
-                                                                         commit_size=commit_size,
-                                                                         threads=thread_count,
-                                                                         scale=scale,
-                                                                         async=('-async' if async else ''))
+                                if test_type != 'light':
+                                    executeCommandString = datagen_run_command.format(path_to_command=path_to_executable,
+                                                                                      config_file=new_config,
+                                                                                      user_name=username,
+                                                                                      pass_word=password,
+                                                                                      connect_string=connect_string,
+                                                                                      batch_size=batch_size,
+                                                                                      commit_size=commit_size,
+                                                                                      threads=thread_count,
+                                                                                      scale=scale,
+                                                                                      async=('-async' if async else ''))
+                                else:
+                                    executeCommandString = javatest_run_command.format(path_to_command=path_to_executable,
+                                                                                     user_name=username,
+                                                                                     pass_word=password,
+                                                                                     connect_string=connect_string,
+                                                                                     batch_size=batch_size,
+                                                                                     commit_size=commit_size,
+                                                                                     row_count=int(float(scale)*100000),
+                                                                                     thread_count=thread_count,
+                                                                                     async=('-async' if async else ''))
 
                                 thread = Thread(target=executeCommand, args=(executeCommandString,))
                                 my_threads.append(thread)
@@ -162,7 +177,7 @@ def run_tests(path_to_executable, config, username, password, connect_string, co
                                             "{0:,.2f}".format(end - start),
                                             "{0:,.2f}".format(insertion_time),
                                             "{0:,.0f}".format((rows_inserted / max_insertion_time) if max_insertion_time != 0 else 0),))
-                            if test_type != 'simple':
+                            if test_type == 'relational' or test_type == 'document':
                                 os.remove(new_config)
                             pbar.update(1)
                             if jvm_display:
@@ -179,7 +194,7 @@ if __name__ == '__main__':
     parser.add_argument("-u", "--username", help="username", required=True)
     parser.add_argument("-p", "--password", help="password", required=True)
     parser.add_argument("-cs", "--connectstring", help="connectstring", required=True)
-    parser.add_argument("-st", "--schematype", help="run the tests against a relational, document or simple schema", choices=['relational', 'document', 'simple'], default="relational")
+    parser.add_argument("-st", "--schematype", help="run the tests against a relational, document or simple schema", choices=['relational', 'document', 'simple', 'light'], default="relational")
     parser.add_argument("-com", "--commitsizes", help="list of commit sizes to run test with (comma seperated)")
     parser.add_argument("-bat", "--batchsizes", help="list of batch sizes to run test with (comma seperated)")
     parser.add_argument("-tc", "--threads", help="list of thread counts to run test with (default=1)", default=DEFAULT_THREAD_COUNT)
