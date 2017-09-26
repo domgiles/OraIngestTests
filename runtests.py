@@ -16,7 +16,7 @@ from prettytable import PrettyTable
 from tqdm import tqdm
 
 datagen_run_command = "{path_to_command} -c {config_file} -u {user_name} -p {pass_word} -cs {connect_string} -bs {batch_size} -commit {commit_size} -scale {scale} -db -cl -nodrop -noddl -tc {threads} {async}"
-javatest_run_command = 'java -jar ' + expanduser("~") + '/PycharmProjects/OraIngestTests/SimpleOraTest.jar -u {user_name} -p {pass_word} -cs {connect_string} -bs {batch_size} -cf {commit_size} -rc {row_count} -tc {thread_count} {async}'
+javatest_run_command = 'java -jar ' + expanduser("~") + '/PycharmProjects/OraIngestTests/SimpleOraTest.jar -u {user_name} -p {pass_word} -cs {connect_string} -bs {batch_size} -cf {commit_size} -rc {row_count} -tc {thread_count} {async} -st {benchmark_type}'
 
 SCRIPT_RUNNER = expanduser("~") + "/sqlcl/bin/sql"
 DEFAULT_BATCH_SIZE = 100
@@ -128,7 +128,7 @@ def run_tests(path_to_executable, config, username, password, connect_string, co
                             my_threads = []
                             start = time.time()
                             for process in range(0, int(processes[0])):
-                                if test_type != 'light':
+                                if test_type == 'relational' or test_type == 'document' :
                                     executeCommandString = datagen_run_command.format(path_to_command=path_to_executable,
                                                                                       config_file=new_config,
                                                                                       user_name=username,
@@ -148,7 +148,8 @@ def run_tests(path_to_executable, config, username, password, connect_string, co
                                                                                      commit_size=commit_size,
                                                                                      row_count=int(float(scale)*100000),
                                                                                      thread_count=thread_count,
-                                                                                     async=('-async' if async else ''))
+                                                                                     async=('-async' if async else ''),
+                                                                                     benchmark_type=('document' if test_type == 'document_light' else 'relational'))
 
                                 thread = Thread(target=executeCommand, args=(executeCommandString,))
                                 my_threads.append(thread)
@@ -172,7 +173,7 @@ def run_tests(path_to_executable, config, username, password, connect_string, co
                                             thread_count,
                                             commit_size,
                                             batch_size,
-                                            int(0 if test_type == 'simple' else image_multiplier) * 100, async,
+                                            int(0 if (test_type == 'simple' or test_type == 'light') else image_multiplier) * 100, async,
                                             rows_inserted,
                                             "{0:,.2f}".format(end - start),
                                             "{0:,.2f}".format(insertion_time),
@@ -194,7 +195,7 @@ if __name__ == '__main__':
     parser.add_argument("-u", "--username", help="username", required=True)
     parser.add_argument("-p", "--password", help="password", required=True)
     parser.add_argument("-cs", "--connectstring", help="connectstring", required=True)
-    parser.add_argument("-st", "--schematype", help="run the tests against a relational, document or simple schema", choices=['relational', 'document', 'simple', 'light'], default="relational")
+    parser.add_argument("-st", "--schematype", help="run the tests against a relational, document or simple schema", choices=['relational', 'document', 'simple', 'light', 'document_light'], default="relational")
     parser.add_argument("-com", "--commitsizes", help="list of commit sizes to run test with (comma seperated)")
     parser.add_argument("-bat", "--batchsizes", help="list of batch sizes to run test with (comma seperated)")
     parser.add_argument("-tc", "--threads", help="list of thread counts to run test with (default=1)", default=DEFAULT_THREAD_COUNT)
